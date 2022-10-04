@@ -37,8 +37,11 @@ app.post('/urls',(req,res)=>{
 });
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
-  console.log(templateVars);
   res.render("urls_show", templateVars);
+});
+app.post("/urls/:id",(req,res)=>{
+  urlDatabase[req.params.id] = req.body.longUrlName;
+  res.redirect('/urls');
 });
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
