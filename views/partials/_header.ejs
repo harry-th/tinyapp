@@ -18,6 +18,10 @@
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         </div>
       </div>
-    <%- username ? include('./logout.ejs') : include('./login.ejs') %>
+      <% if(userId) { %>
+        <%- include('./logout.ejs') %>
+        <% } else { %> 
+        <a href='/urls/login'>login</a
+     <% }%> 
     </nav>
   </header>
