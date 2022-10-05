@@ -9,6 +9,13 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  }
+};
 //stackoverflow random string function slightly altered
 const makeId = function() {
   let result = '';
@@ -34,7 +41,25 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
+  res.render("urls_new", templateVars);
+});
+app.get("/urls/register", (req,res)=>{
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
+  res.render("urls_register", templateVars);
+});
+app.post("/register",(req,res)=>{
+  let id = makeId();
+  let {username, password} = req.body;
+  users[id] = {id, username, password};
+  res.cookie('username', username);
+  res.redirect('/urls');
 });
 app.post('/urls',(req,res)=>{
   let id = makeId();
