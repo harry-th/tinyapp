@@ -23,8 +23,16 @@
       <table class="table">
         <thead>
           <tr>
+            <% if(Object.keys(urls).length<1) { %>
+              <% if(!userId) { %>
+             <h5> Make an <a href="/urls/register">account</a> or <a href="/urls/login">login</a>  to make urls </h5>
+             <% } else { %>
+              <h5>Make a new <a href="urls/new">URL!</a></h5>
+            <% } %>
+              <% } else { %>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <% } %>
             <th></th>
           </tr>
         </thead>
@@ -33,7 +41,7 @@
             <tr>
               <form method="POST" action="/urls/<%= id %>/delete">
               <td><a style='color:black;' href="/urls/<%= id %>"><%= id %></a></td>
-              <td><%= urls[id] %></td>
+              <td><%= urls[id].longURL %></td>
               <td><button class="btn btn-outline-danger">delete</button></td>
             </form>
             </tr>
