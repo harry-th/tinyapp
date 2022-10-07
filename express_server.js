@@ -169,6 +169,8 @@ app.delete("/urls/:id/delete", authorizedAction, (req, res) => {
   res.redirect('/urls');
 });
 app.post('/login', unAuthorized, (req, res) => {
+  let {email, password} = req.body;
+  if (!email || !password) res.send('fields must be filled out');
   let check = checkUserInfo(users, req.body, ['email', 'password']);
   if (check) {
     req.session.userId = check;
