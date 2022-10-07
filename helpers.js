@@ -7,10 +7,8 @@ let checkUserInfo = (users, body, requirements) => {
   userloop:
   for (let user in users) {
     for (let input in body) {
-      console.log(users[user][input],body[input]);
       if (input === 'password') {
         if (!bcrypt.compareSync(body[input], users[user][input])) {
-          console.log('jhello');
           continue userloop;
         }
       } else if (users[user][input] !== body[input]) {
