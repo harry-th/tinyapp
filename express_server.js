@@ -144,7 +144,6 @@ app.get('/urls/login', unAuthorized, (req, res) => {
   res.render("urls_login", templateVars);
 });
 app.get("/urls/:id", authorizedAction, (req, res) => {
-
   const templateVars = {
     urls: urlDatabase,
     userId: req.session.userId,
@@ -159,14 +158,14 @@ app.put("/urls/:id", authorizedAction, (req, res) => {
   urlDatabase[req.params.id] = { longURL, userID: req.session.userId };
   res.redirect('/urls');
 });
+app.delete("/urls/:id/delete", authorizedAction, (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect('/urls');
+});
 app.get("/u/:id", (req, res) => {
   let url = urlDatabase[req.params.id];
   if (!url) res.end('there\'s nothing here...');
   res.redirect(url.longURL);
-});
-app.delete("/urls/:id/delete", authorizedAction, (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect('/urls');
 });
 app.post('/login', unAuthorized, (req, res) => {
   let {email, password} = req.body;
