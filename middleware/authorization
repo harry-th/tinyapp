@@ -1,0 +1,28 @@
+let authorized = (redirect) => {
+  return (req, res, next) => {
+    if (req.session.userId) {
+      next();
+    } else {
+      if (!redirect) res.end("you aren't authorized to do that");
+      res.redirect(redirect);
+    }
+  };
+};
+let authorizedAction = (urlDatabase) => {
+  return (req, res, next) => {
+    if (!urlDatabase[req.params.id]) res.end('this url doesn\'t exist');
+    if (req.session.userId === urlDatabase[req.params.id].userID) {
+      next();
+    } else {
+      res.send('you are not authorized to do that');
+    }
+  };
+};
+let unAuthorized = (req, res, next) => {
+  if (!req.session.userId) {
+    next();
+  } else {
+    res.redirect('/urls');
+  }
+};
+module.exports = {authorized, authorizedAction, unAuthorized};

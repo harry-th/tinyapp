@@ -1,84 +1,33 @@
 const express = require("express");
+const app = express();
+const PORT = 8080; // default port 8080
+
 let cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
 const methodOverride = require('method-override');
-const app = express();
 
-const checkUserInfo = require('./helpers.js');
-const PORT = 8080; // default port 8080
+const {checkUserInfo, makeId, urlsForUser} = require('./helpers.js');
+const {authorized, authorizedAction, unAuthorized} = require('./middleware/authorization');
+const {users, urlDatabase} = require('./db/pseudoDB');
 
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(cookieSession({
   name: 'session',
   keys: ['hello']
 }));
-const urlDatabase = {
-};
-const users = {
-  'aJ48lW': {
-    id: "aJ48lW",
-    username: 'johnny',
-    email: "a@a.com",
-    password: bcrypt.hashSync("a", 10),
-  }
-};
-//stackoverflow random string function slightly altered
-const makeId = function() {
-  let result = '';
-  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let i = 0;
-  while (i < 6) {
-    result += chars.charAt(Math.floor(Math.random() *
-      chars.length));
-    i++;
-  }
-  return result;
-};
-let authorized = (redirect) => {
-  return (req, res, next) => {
-    if (req.session.userId) {
-      next();
-    } else {
-      if (!redirect) res.end("you aren't authorized to do that");
-      res.redirect(redirect);
-    }
-  };
-};
-let authorizedAction = (req, res, next) => {
-  if (!urlDatabase[req.params.id]) res.end('this url doesn\'t exist');
-  if (req.session.userId === urlDatabase[req.params.id].userID) {
-    next();
-  } else {
-    res.send('you are not authorized to do that');
-  }
-};
-let unAuthorized = (req, res, next) => {
-  if (!req.session.userId) {
-    next();
-  } else {
-    res.redirect('/urls');
-  }
-};
-const urlsForUser = (id) => {
-  let urls = {};
-  for (const link in urlDatabase) {
-    if (urlDatabase[link].userID === id) {
-      urls[link] = urlDatabase[link];
-    }
-  }
-  return urls;
-};
+
 app.set('view engine', 'ejs');
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
+//main pages
 app.get('/', (req, res) => {
   if (!req.session.userId) res.redirect('/urls/login');
-  res.redirect('/urls');
+  else
+    res.redirect('/urls');
 });
 app.get("/urls", (req, res) => {
-  let urls = urlsForUser(req.session.userId);
+  let urls = urlsForUser(req.session.userId, urlDatabase);
   const templateVars = {
     urls: urls,
     userId: req.session.userId,
@@ -94,6 +43,37 @@ app.get("/urls/new", authorized('/urls/login'), (req, res) => {
   };
   res.render("urls_new", templateVars);
 });
+//login and out
+app.get('/urls/login', unAuthorized, (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    userId: req.session.userId,
+    users: users,
+    taken: null
+  };
+  res.render("urls_login", templateVars);
+});
+app.post('/login', unAuthorized, (req, res) => {
+  let {email, password} = req.body;
+  if (!email || !password) res.send('fields must be filled out');
+  let check = checkUserInfo(users, req.body, ['email', 'password']);
+  if (check) {
+    req.session.userId = check;
+    return res.redirect('/urls');
+  }
+  let templateVars = {
+    taken: 'incorrect login information',
+    userId: req.session.userId,
+    users: users,
+  };
+  res.status(400).render('urls_login', templateVars);
+});
+app.post('/logout', (req, res) => {
+  req.session = null;
+  res.redirect('/urls');
+});
+
+//register
 app.get("/urls/register", unAuthorized, (req, res) => {
   const templateVars = {
     urls: urlDatabase,
@@ -120,22 +100,15 @@ app.post("/register", unAuthorized, (req, res) => {
   req.session.userId = id;
   res.redirect("/urls");
 });
+
+//urls making deleting viewing and redirecting
 app.post('/urls', authorized(), (req, res) => {
   let id = makeId();
   const { longURL } = req.body;
   urlDatabase[id] = { longURL, userID: req.session.userId };
   res.redirect(`/urls/${id}`);
 });
-app.get('/urls/login', unAuthorized, (req, res) => {
-  const templateVars = {
-    urls: urlDatabase,
-    userId: req.session.userId,
-    users: users,
-    taken: null
-  };
-  res.render("urls_login", templateVars);
-});
-app.get("/urls/:id", authorizedAction, (req, res) => {
+app.get("/urls/:id", authorizedAction(urlDatabase), (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     userId: req.session.userId,
@@ -145,41 +118,26 @@ app.get("/urls/:id", authorizedAction, (req, res) => {
   };
   res.render("urls_show", templateVars);
 });
-app.put("/urls/:id", authorizedAction, (req, res) => {
+app.put("/urls/:id", authorizedAction(urlDatabase), (req, res) => {
   let { longURL } = req.body;
   urlDatabase[req.params.id] = { longURL, userID: req.session.userId };
   res.redirect('/urls');
 });
-app.delete("/urls/:id/delete", authorizedAction, (req, res) => {
+app.delete("/urls/:id/delete", authorizedAction(urlDatabase), (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect('/urls');
 });
 app.get("/u/:id", (req, res) => {
   let url = urlDatabase[req.params.id];
   if (!url) res.end('there\'s nothing here...');
-  res.redirect(url.longURL);
+  else
+    res.redirect(url.longURL);
 });
-app.post('/login', unAuthorized, (req, res) => {
-  let {email, password} = req.body;
-  if (!email || !password) res.send('fields must be filled out');
-  let check = checkUserInfo(users, req.body, ['email', 'password']);
-  if (check) {
-    req.session.userId = check;
-    return res.redirect('/urls');
-  }
-  let templateVars = {
-    taken: 'incorrect login information',
-    userId: req.session.userId,
-    users: users,
-  };
-  res.status(400).render('urls_login', templateVars);
-});
-app.post('/logout', (req, res) => {
-  req.session = null;
-  res.redirect('/urls');
-});
-app.get('*', (req, res) => {
-  res.send("there's nothing here...");
+
+
+//not found
+app.use((req,res)=>{
+  res.status(404).send('nothing here...');
 });
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);

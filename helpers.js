@@ -19,4 +19,25 @@ let checkUserInfo = (users, body, requirements) => {
   }
   return false;
 };
-module.exports = checkUserInfo;
+
+const makeId = function() {
+  let result = '';
+  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let i = 0;
+  while (i < 6) {
+    result += chars.charAt(Math.floor(Math.random() *
+      chars.length));
+    i++;
+  }
+  return result;
+};
+const urlsForUser = (id, urlDatabase) => {
+  let urls = {};
+  for (const link in urlDatabase) {
+    if (urlDatabase[link].userID === id) {
+      urls[link] = urlDatabase[link];
+    }
+  }
+  return urls;
+};
+module.exports = {checkUserInfo, makeId, urlsForUser};
