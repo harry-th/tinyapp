@@ -8,6 +8,7 @@ let authorized = (redirect) => {
     }
   };
 };
+
 let authorizedAction = (urlDatabase) => {
   return (req, res, next) => {
     if (!urlDatabase[req.params.id]) res.end('this url doesn\'t exist');
@@ -18,6 +19,7 @@ let authorizedAction = (urlDatabase) => {
     }
   };
 };
+
 let unAuthorized = (req, res, next) => {
   if (!req.session.userId) {
     next();

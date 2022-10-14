@@ -1,5 +1,5 @@
 let bcrypt = require('bcryptjs');
-
+//checks inputed user information and passwords. list what needs to be included in requirements
 let checkUserInfo = (users, body, requirements) => {
   for (let required of requirements) {
     if (!body[required]) return false;

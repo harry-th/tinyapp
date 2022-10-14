@@ -10,6 +10,8 @@ const {checkUserInfo, makeId, urlsForUser} = require('./helpers.js');
 const {authorized, authorizedAction, unAuthorized} = require('./middleware/authorization');
 const {users, urlDatabase} = require('./db/pseudoDB');
 
+app.set('view engine', 'ejs');
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
@@ -18,7 +20,6 @@ app.use(cookieSession({
   keys: ['hello']
 }));
 
-app.set('view engine', 'ejs');
 
 //main pages
 app.get('/', (req, res) => {
@@ -139,6 +140,7 @@ app.get("/u/:id", (req, res) => {
 app.use((req,res)=>{
   res.status(404).send('nothing here...');
 });
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
